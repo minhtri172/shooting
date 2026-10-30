@@ -2,20 +2,26 @@
 FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
 
-# Copy project files
 COPY pom.xml .
 COPY src ./src
 
-# Build the application (adjust for gradle if needed)
-RUN mvn clean package -DskipTests
+RUN mvn clean package
 
 # --- Run Stage ---
 FROM eclipse-temurin:17-jdk-jammy
 
 WORKDIR /app
 
-# Install necessary GUI / X11 / GTK libraries required by JavaFX Prism
+# Install GUI, Xvfb, VNC, and NoVNC dependencies
 RUN apt-get update && apt-get install -y \
+    wget \
+    unzip \
+    xvfb \
+    x11vnc \
+    fluxbox \
+    net-tools \
+    novnc \
+    websockify \
     libgl1-mesa-dri \
     libgl1-mesa-glx \
     libgtk-3-0 \
@@ -26,11 +32,20 @@ RUN apt-get update && apt-get install -y \
     libfreetype6 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the built jar from the build stage
-COPY --from=build /app/target/your-app-name-1.0-SNAPSHOT.jar /app/app.jar
+# Download JavaFX Linux SDK 21
+RUN wget -q https://download2.gluonhq.com/openjfx/21.0.2/openjfx-21.0.2_linux-x64_bin-sdk.zip \
+    && unzip openjfx-21.0.2_linux-x64_bin-sdk.zip \
+    && rm openjfx-21.0.2_linux-x64_bin-sdk.zip
 
-# Set environment variables for display
-ENV DISPLAY=:0
+# Copy the generated jar from the build stage
+COPY --from=build /app/target/*.jar /app/app.jar
 
-# Run the JavaFX application
-CMD ["java", "--module-path", "/path/to/javafx-sdk/lib", "--add-modules", "javafx.controls,javafx.fxml", "-jar", "/app/app.jar"]
+# Copy entrypoint script
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# Expose the web port for NoVNC
+EXPOSE 8080
+
+# Use the entrypoint script to launch everything
+ENTRYPOINT ["/app/entrypoint.sh"]

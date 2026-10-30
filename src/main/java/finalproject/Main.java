@@ -49,7 +49,7 @@ import javafx.util.Duration;
  *
  * @author minht
  */
-public class FinalProject extends Application {
+public class Main extends Application {
 
     private final int LEFT = 0; // Direction left
     private final int RIGHT = 1; // Direction right
@@ -647,7 +647,7 @@ public class FinalProject extends Application {
                             lbError.setText("Invalid File Name! " + ex.toString());
                             lbError.setTextFill(Color.RED);
                         } catch (ClassNotFoundException ex) {
-                            Logger.getLogger(FinalProject.class.getName()).log(Level.SEVERE, null, ex);
+                            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                         }
                     }
                 }
